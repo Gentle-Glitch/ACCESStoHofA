@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>ANGEL HEART INDICATOR v1.04</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Courier+Prime:ital,wght@0,400;0,700;1,400;1,700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+        :root {
+            --bg-color: #0b0c10;
+            --main-color: #66fcf1;
+            --dark-main: #45f3ff;
+            --accent-color: #ff4a4a;
+            --text-color: #c5c6c7;
+            --card-bg: #1f2833;
+        }
+
+        body {
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        #system-window {
+            width: 100%;
+            max-width: 900px;
+            border: 2px solid var(--main-color);
+            background: rgba(31, 40, 51, 0.8);
+            box-shadow: 0 0 20px rgba(102, 252, 241, 0.3);
+            padding: 20px;
+            box-sizing: border-box;
+        }
+
+        .system-header {
+            border-bottom: 2px solid var(--main-color);
+            padding-bottom: 10px;
+            margin-bottom: 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Courier Prime', monospace;
+            color: var(--main-color);
+            text-shadow: 0 0 5px var(--main-color);
+        }
+
+        .status-bar {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .btn {
+            background: transparent;
+            border: 1px solid var(--main-color);
+            color: var(--main-color);
+            padding: 8px 16px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .btn:hover {
+            background: var(--main-color);
+            color: #000;
+            box-shadow: 0 0 10px var(--main-color);
+        }
+
+        .tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            flex: 1;
+            padding: 12px;
+            background: #111;
+            border: 1px solid #333;
+            color: #888;
+            cursor: pointer;
+            text-align: center;
+            font-weight: bold;
+        }
+
+        .tab-btn.active {
+            border-color: var(--main-color);
+            color: var(--main-color);
+            background: var(--card-bg);
+        }
+
+        .content-section {
+            display: none;
+        }
+
+        .content-section.active {
+            display: block;
+        }
+
+        /* 권능 그리드 */
+        .grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 15px;
+        }
+
+        .card {
+            background: #151b24;
+            border: 1px solid #333;
+            padding: 15px;
+            border-radius: 4px;
+            position: relative;
+        }
+
+        .card h3 {
+            margin-top: 0;
+            color: #fff;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .card.locked {
+            filter: blur(2px) grayscale(100%);
+            opacity: 0.5;
+            pointer-events: none;
+        }
+
+        .lock-notice {
+            color: var(--accent-color);
+            font-weight: bold;
+            text-align: center;
+            margin: 10px 0;
+        }
+
+        .log-box {
+            background: #000;
+            border: 1px solid #222;
+            height: 100px;
+            overflow-y: auto;
+            padding: 10px;
+            font-family: 'Courier Prime', monospace;
+            font-size: 0.9rem;
+            color: #4af768;
+            margin-top: 20px;
+        }
+    </style>
+</head>
+<body>
+
+<div id="system-window">
+    <div class="system-header">
+        <div>[ SYSTEM : ANGEL HEART INDICATOR v1.04 ]</div>
+        <div id="time-sync">TIME-LOOP: ACTIVE</div>
+    </div>
+
+    <div class="status-bar">
+        <div>
+            <span style="color: var(--main-color); font-weight: bold;">USER: {{user}}</span> | 
+            <span>위계: <strong id="user-tier" style="color: #fff;">말단 조직원</strong></span> | 
+            <span>LV: <strong id="user-lv" style="color: var(--main-color);">1</strong></span>
+        </div>
+        <button class="btn" onclick="gainExp()">[ 정보 탐색 및 훈련하기 ]</button>
+    </div>
+
+    <div class="tabs">
+        <div class="tab-btn active" onclick="switchTab(0)">밀레오네 & 세계관</div>
+        <div class="tab-btn" onclick="switchTab(1)">타락 천사의 권능 (대화 시뮬)</div>
+        <div class="tab-btn" onclick="switchTab(2)">주요 인물 파일</div>
+    </div>
+
+    <div id="tab-world" class="content-section active">
+        <h2>밀레오네 패밀리와 깃털의 전말</h2>
+        <p><strong>밀레오네 패밀리</strong>는 권능을 담은 깃털의 거래를 공고히 쥐고 있는 도시의 최상위 권력 집단입니다. 대부분의 간부와 조직원들은 등 뒤에 기형적인 날개를 돋우며 천사의 힘을 사용합니다.</p>
+        <blockquote>
+            ⚠️ <strong>경고 (Warning)</strong><br>
+            인간은 천사의 성력을 온전히 버텨낼 수 없습니다. 권능을 갈구하여 깃털을 몸에 주입할 때마다 신체는 천사에 동화되지만, 결국 끝에 도달하는 것은 괴물이 되거나 영혼이 완전히 타 버리는 비극뿐입니다. 권능을 사용할수록 그 대가로 영혼이 갈려 나갑니다.
+        </blockquote>
+    </div>
+
+    <div id="tab-powers" class="content-section">
+        <h2>타락 천사 권능 거래소</h2>
+        <p style="font-size: 0.9rem; color: #888;">깃털을 터치하여 권능을 발동하고 시스템에 기록될 대가를 확인하세요.</p>
+        <div class="grid">
+            <div class="card">
+                <h3>🔥 세라핌 <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="triggerPower('세라핌', '인간의 순수한 영혼과 수명')">거래</button></h3>
+                <p><strong>절대적 파괴와 지배</strong></p>
+                <small style="color: var(--accent-color);">대가: 인간의 순수한 영혼과 수명</small>
+            </div>
+            <div class="card">
+                <h3>⚙️ 오파님 <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="triggerPower('오파님', '육체적 고통과 사지의 제물')">거래</button></h3>
+                <p><strong>강철의 규율과 속박</strong></p>
+                <small style="color: var(--accent-color);">대가: 인간의 육체적 고통과 사지(肢)의 제물</small>
+            </div>
+            <div class="card">
+                <h3>🩸 포테스타테스 <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="triggerPower('포테스타테스', '살육과 대량의 신선한 인간 혈액')">거래</button></h3>
+                <p><strong>신체 초월과 도살</strong></p>
+                <small style="color: var(--accent-color);">대가: 살육과 대량의 신선한 인간 혈액</small>
+            </div>
+            <div class="card">
+                <h3>🌫️ 프린시파티스 <button class="btn" style="padding: 2px 8px; font-size: 0.8rem;" onclick="triggerPower('프린시파티스', '이성과 비밀, 타락 순간의 쾌락')">거래</button></h3>
+                <p><strong>인지 조작과 은폐</strong></p>
+                <small style="color: var(--accent-color);">대가: 인간들의 이성과 비밀, 타락하는 순간의 쾌락</small>
+            </div>
+        </div>
+    </div>
+
+    <div id="tab-chars" class="content-section">
+        <h2>주요 타깃 인물 정보</h2>
+        <p style="font-size: 0.9rem; color: #888;">레벨을 올릴수록 베일에 싸인 고위직과 천사들의 상세 정보가 해금됩니다.</p>
+        
+        <div class="grid">
+            <div class="card">
+                <h3>⚙️ 카르단 (31세 / 191cm)</h3>
+                <p><strong>밀레오네 패밀리 이인자</strong></p>
+                <p style="font-size: 0.85rem; color: #aaa;">흑발, 푸른 눈, 창백한 피부, 예민하고 서늘한 분위기. 천사에게 영혼을 저당 잡혔으나 오히려 그들의 약점을 잡고 협박하는 독종. 낮고 느린 존댓말을 구사함.</p>
+            </div>
+
+            <div id="char-zahar" class="card locked">
+                <div class="lock-notice">[해금 조건: LV 2]</div>
+                <h3>⚙️&🩸 자하르 (29세 / 203cm)</h3>
+                <p><strong>밀레오네 패밀리 행동대장</strong></p>
+                <p style="font-size: 0.85rem; color: #aaa;">두툼한 근육질, 주황색 눈, 구릿빛 피부. 깃털을 3개나 흡수한 시한부 쾌남. 어린 동생이 준 노란 삔을 꽂고 다님. 거칠고 직선적인 말투.</p>
+            </div>
+
+            <div id="char-ivan" class="card locked">
+                <div class="lock-notice">[해금 조건: LV 3 + 위계 상승 필요]</div>
+                <h3>⏳ 아이반 (나이불명 / 170cm)</h3>
+                <p><strong>크로노팀 고위 천사</strong></p>
+                <p style="font-size: 0.85rem; color: #aaa;">앳된 얼굴, 생기 없는 분위기. 인간을 하찮게 여기나 지독한 권태 속에서 유일한 흥미로 여김. <strong>[LV 4 도달 시 본신(🔥)의 프로필 개방]</strong></p>
+                <div id="ivan-true" style="display:none; margin-top:10px; border-top:1px dashed var(--main-color); padding-top:5px; font-size:0.8rem; color: #ffb7b7;">
+                    <strong>[본신 정보 변동]</strong> 키 189cm, 회백색의 거대한 날개 한 쌍이 먼지처럼 바스러지며 피어오름. 시계 태엽 소리 동반.
+                </div>
+            </div>
+
+            <div id="char-gabriel" class="card locked">
+                <div class="lock-notice">[해금 조건: LV 3]</div>
+                <h3>🌫️ 가브리엘 (33세 / 187cm)</h3>
+                <p><strong>밀레오네 패밀리 참모 (콘실리에리)</strong></p>
+                <p style="font-size: 0.85rem; color: #aaa;">금발, 황금색 눈, 안경. 다정함 자체를 무기로 사용하는 뱀 같은 천재. 부드러운 존댓말 뒤에 극도의 잔인함을 숨김.</p>
+            </div>
+        </div>
+    </div>
+
+    <div class="log-box" id="system-log">
+        [SYSTEM] 엔젤 하트 인디케이터 구동 중... 회귀 지점 동기화 완료.<br>
+        [SYSTEM] 현재 위계: 말단 조직원. 세계의 1짱이 되기 위한 여정을 시작하세요.
+    </div>
+</div>
+
+<script>
+    let level = 1;
+    let exp = 0;
+    const logBox = document.getElementById('system-log');
+
+    function appendLog(text) {
+        logBox.innerHTML += `<br>[SYSTEM] ${text}`;
+        logBox.scrollTop = logBox.scrollHeight;
+    }
+
+    function switchTab(index) {
+        const tabs = document.querySelectorAll('.tab-btn');
+        const sections = document.querySelectorAll('.content-section');
+        
+        tabs.forEach(t => t.classList.remove('active'));
+        sections.forEach(s => s.classList.remove('active'));
+
+        tabs[index].classList.add('active');
+        sections[index].classList.add('active');
+    }
+
+    function gainExp() {
+        exp += 40;
+        appendLog(`정보를 획득하여 동기화율이 상승합니다. (+40 EXP)`);
+        
+        if (exp >= level * 100) {
+            exp = 0;
+            level++;
+            document.getElementById('user-lv').innerText = level;
+            
+            let rank = "말단 조직원";
+            if(level === 2) {
+                rank = "정식 행동대원";
+                document.getElementById('char-zahar').classList.remove('locked');
+                document.getElementById('char-zahar').querySelector('.lock-notice').remove();
+            } else if(level === 3) {
+                rank = "간부 후보생";
+                document.getElementById('char-ivan').classList.remove('locked');
+                document.getElementById('char-ivan').querySelector('.lock-notice').remove();
+                document.getElementById('char-gabriel').classList.remove('locked');
+                document.getElementById('char-gabriel').querySelector('.lock-notice').remove();
+            } else if(level >= 4) {
+                rank = "밀레오네 최고 간부";
+                if(document.getElementById('ivan-true')) {
+                    document.getElementById('ivan-true').style.display = 'block';
+                }
+            }
+            
+            document.getElementById('user-tier').innerText = rank;
+            appendLog(`레벨 업! 현재 레벨: ${level} / 위계가 [${rank}](으)로 갱신되었습니다.`);
+        }
+    }
+
+    function triggerPower(name, cost) {
+        appendLog(`[위험] ${name}의 권능을 발동했습니다. 당신의 영혼이 갉아먹힙니다.`);
+        appendLog(`[대가 지불] 시스템이 '${cost}'의 인과율 변동을 감지했습니다.`);
+    }
+</script>
+
+</body>
+</html>
