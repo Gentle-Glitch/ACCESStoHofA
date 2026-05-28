@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>SYSTEM_INDICATOR</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+        :root {
+            --bg: #090a0f;
+            --panel: #11141a;
+            --border: #2c3545;
+            --neon: #4ffbdf;
+            --neon-dim: rgba(79, 251, 223, 0.1);
+            --text: #a5b1c2;
+            --text-light: #f5f6fa;
+            --accent: #ff5252;
+        }
+
+        body {
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Noto Sans KR', sans-serif;
+            margin: 0;
+            padding: 40px 20px;
+            display: flex;
+            justify-content: center;
+        }
+
+        #system-panel {
+            width: 100%;
+            max-width: 640px;
+            background: var(--panel);
+            border: 1px solid var(--border);
+            padding: 25px;
+            box-sizing: border-box;
+        }
+
+        /* 탑 바 (헤더) */
+        .system-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-family: 'Fira Code', monospace;
+            font-size: 0.85rem;
+            letter-spacing: 1px;
+            color: var(--neon);
+            margin-bottom: 25px;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 12px;
+        }
+
+        /* 미니멀 상태창 */
+        .status-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+            margin-bottom: 25px;
+        }
+
+        .status-item {
+            background: rgba(0, 0, 0, 0.2);
+            border-left: 3px solid var(--neon);
+            padding: 10px 15px;
+        }
+
+        .status-label {
+            font-size: 0.75rem;
+            color: #718093;
+            margin-bottom: 4px;
+            text-transform: uppercase;
+        }
+
+        .status-value {
+            font-size: 1.1rem;
+            font-weight: 700;
+            color: var(--text-light);
+        }
+
+        /* 탭 버튼 */
+        .nav-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border);
+            margin-bottom: 20px;
+        }
+
+        .tab-btn {
+            padding: 10px 20px;
+            background: none;
+            border: none;
+            color: #718093;
+            font-weight: 700;
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            color: var(--neon);
+            border-bottom: 2px solid var(--neon);
+        }
+
+        .content-section { display: none; }
+        .content-section.active { display: block; }
+
+        /* 리스트 양식 조절 */
+        .info-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .info-item {
+            border-bottom: 1px solid rgba(44, 53, 69, 0.4);
+            padding: 12px 0;
