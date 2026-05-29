@@ -1,0 +1,999 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ANGEL_HEART_INDICATOR_v1.0</title>
+  <link href="https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;700&display=swap" rel="stylesheet">
+  <style>
+    /* ═══════════════════════════════════════════
+       ANTIQUE TERMINAL — BASE TOKENS
+    ═══════════════════════════════════════════ */
+    :root {
+      --bg:        #000000;
+      --bg2:       #050805;
+      --bg3:       #0a0f0a;
+      --fg:        #00ff66;
+      --fg-dim:    #007a32;
+      --fg-muted:  #004d20;
+      --fg-ghost:  #002a12;
+      --accent:    #ff3c3c;
+      --accent2:   #ffb300;
+      --border:    #004d20;
+      --scan:      rgba(0, 255, 102, 0.03);
+    }
+
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+      background: var(--bg);
+      color: var(--fg);
+      font-family: 'Fira Code', 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      min-height: 100vh;
+    }
+
+    /* ── CRT scanline overlay ── */
+    body::before {
+      content: '';
+      pointer-events: none;
+      position: fixed;
+      inset: 0;
+      background: repeating-linear-gradient(
+        0deg,
+        transparent,
+        transparent 2px,
+        var(--scan) 2px,
+        var(--scan) 4px
+      );
+      z-index: 9999;
+    }
+
+    /* ── phosphor flicker ── */
+    @keyframes flicker {
+      0%,100% { opacity: 1; }
+      92%      { opacity: 1; }
+      93%      { opacity: 0.85; }
+      94%      { opacity: 1; }
+      96%      { opacity: 0.9; }
+      97%      { opacity: 1; }
+    }
+    body { animation: flicker 8s infinite; }
+
+    @keyframes blink  { 0%,49%{opacity:1} 50%,100%{opacity:0} }
+    @keyframes fadein { from{opacity:0;transform:translateY(6px)} to{opacity:1;transform:none} }
+    @keyframes pulse  { 0%,100%{opacity:1} 50%{opacity:0.4} }
+    @keyframes scanin { from{clip-path:inset(0 0 100% 0)} to{clip-path:inset(0 0 0% 0)} }
+
+    /* ═══════════════════════════════════════════
+       LAYOUT WRAPPER
+    ═══════════════════════════════════════════ */
+    #root {
+      width: 100%;
+      max-width: 700px;
+      margin: 0 auto;
+      padding: 32px 16px 48px;
+      position: relative;
+    }
+
+    /* ═══════════════════════════════════════════
+       SHARED COMPONENTS
+    ═══════════════════════════════════════════ */
+
+    /* Section header bar */
+    .t-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      color: var(--fg-dim);
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 8px;
+      margin-bottom: 24px;
+    }
+    .t-header .hl { color: var(--fg); }
+
+    /* Cursor blink */
+    .cursor::after {
+      content: '█';
+      animation: blink 1s step-end infinite;
+      color: var(--fg);
+      margin-left: 2px;
+    }
+
+    /* Dim label */
+    .lbl {
+      font-size: 0.65rem;
+      letter-spacing: 2px;
+      color: var(--fg-muted);
+      text-transform: uppercase;
+      margin-bottom: 3px;
+    }
+
+    /* Separator */
+    .sep {
+      border: none;
+      border-top: 1px solid var(--fg-ghost);
+      margin: 0;
+    }
+
+    /* ── Screen transitions ── */
+    .screen { display: none; animation: fadein 0.5s ease; }
+    .screen.active { display: block; }
+
+    /* ── Warning overlay ── */
+    #warn-overlay {
+      display: none;
+      position: fixed;
+      inset: 0;
+      background: rgba(0,0,0,0.96);
+      z-index: 500;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      text-align: center;
+      padding: 40px 24px;
+    }
+    #warn-overlay.show { display: flex; animation: fadein 0.2s ease; }
+    .warn-tag {
+      font-size: 0.62rem;
+      letter-spacing: 4px;
+      color: var(--accent);
+      margin-bottom: 20px;
+      animation: pulse 1.2s infinite;
+    }
+    .warn-title {
+      font-size: 1.15rem;
+      font-weight: 700;
+      letter-spacing: 2px;
+      color: var(--fg);
+      margin-bottom: 14px;
+    }
+    .warn-desc {
+      font-size: 0.8rem;
+      color: var(--fg-dim);
+      line-height: 1.9;
+      max-width: 360px;
+      margin-bottom: 22px;
+    }
+    .warn-cost {
+      border: 1px solid var(--accent);
+      padding: 10px 28px;
+      font-size: 0.75rem;
+      color: var(--accent);
+      letter-spacing: 1px;
+      margin-bottom: 32px;
+      animation: pulse 1.6s infinite;
+    }
+    .warn-ok {
+      background: none;
+      border: none;
+      border-bottom: 1px solid var(--fg-dim);
+      color: var(--fg-dim);
+      font-family: 'Fira Code', monospace;
+      font-size: 0.7rem;
+      letter-spacing: 2px;
+      cursor: pointer;
+      padding-bottom: 2px;
+    }
+    .warn-ok:hover { color: var(--fg); border-color: var(--fg); }
+
+    /* ═══════════════════════════════════════════
+       SCREEN 1 — NAME INPUT
+    ═══════════════════════════════════════════ */
+    #screen-name {
+      min-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+    }
+    #screen-name.active { display: flex; }
+
+    .boot-log {
+      font-size: 0.72rem;
+      color: var(--fg-dim);
+      line-height: 2;
+      margin-bottom: 36px;
+    }
+    .boot-log .ok  { color: var(--fg); }
+    .boot-log .err { color: var(--accent); }
+    .boot-log .warn { color: var(--accent2); }
+
+    .name-prompt {
+      font-size: 0.88rem;
+      color: var(--fg-dim);
+      margin-bottom: 8px;
+    }
+    .name-row {
+      display: flex;
+      align-items: center;
+      gap: 0;
+      max-width: 400px;
+    }
+    .name-row span {
+      color: var(--fg);
+      font-size: 1rem;
+      margin-right: 10px;
+      white-space: nowrap;
+    }
+    .name-input {
+      flex: 1;
+      background: transparent;
+      border: none;
+      border-bottom: 1px solid var(--fg-dim);
+      color: var(--fg);
+      font-family: 'Fira Code', monospace;
+      font-size: 0.95rem;
+      outline: none;
+      caret-color: var(--fg);
+      padding: 4px 0;
+    }
+    .name-input::placeholder { color: var(--fg-ghost); }
+    .name-enter {
+      font-size: 0.65rem;
+      color: var(--fg-muted);
+      margin-top: 10px;
+      letter-spacing: 1px;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCREEN 2 — FEATHER SELECT
+    ═══════════════════════════════════════════ */
+    .feather-q {
+      font-size: 0.9rem;
+      color: var(--fg-dim);
+      line-height: 2;
+      margin-bottom: 4px;
+    }
+    .feather-q .hl { color: var(--fg); }
+    .feather-sub {
+      font-size: 0.62rem;
+      letter-spacing: 3px;
+      color: var(--fg-muted);
+      margin-bottom: 28px;
+    }
+
+    .feather-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 1px;
+      background: var(--border);
+      border: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    @media (max-width: 500px) {
+      .feather-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+
+    .f-card {
+      background: var(--bg);
+      padding: 18px 14px;
+      cursor: pointer;
+      transition: background 0.15s;
+      position: relative;
+    }
+    .f-card:hover { background: var(--bg3); }
+    .f-card:hover .f-name { color: var(--fg); }
+    .f-card:hover .f-icon { opacity: 1; }
+    .f-card:hover::after {
+      content: '▶';
+      position: absolute;
+      top: 8px; right: 10px;
+      font-size: 0.55rem;
+      color: var(--fg-dim);
+    }
+
+    .f-icon {
+      font-size: 1.3rem;
+      margin-bottom: 8px;
+      opacity: 0.7;
+      display: block;
+      transition: opacity 0.15s;
+    }
+    .f-name {
+      font-size: 0.75rem;
+      font-weight: 700;
+      color: var(--fg-dim);
+      letter-spacing: 1px;
+      margin-bottom: 5px;
+      transition: color 0.15s;
+    }
+    .f-cost {
+      font-size: 0.65rem;
+      color: var(--accent);
+      opacity: 0.7;
+      line-height: 1.5;
+    }
+
+    /* ═══════════════════════════════════════════
+       SCREEN 3 — MAIN PANEL
+    ═══════════════════════════════════════════ */
+
+    /* ── Status grid ── */
+    .stat-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      border: 1px solid var(--border);
+      margin-bottom: 24px;
+    }
+    @media (max-width: 480px) {
+      .stat-grid { grid-template-columns: repeat(2, 1fr); }
+    }
+    .stat-cell {
+      padding: 12px 14px;
+      border-right: 1px solid var(--border);
+    }
+    .stat-cell:last-child { border-right: none; }
+    .stat-val {
+      font-size: 1rem;
+      font-weight: 700;
+      color: var(--fg);
+      margin-top: 2px;
+    }
+    .stat-cell.ability .stat-val {
+      font-size: 0.72rem;
+      letter-spacing: 1px;
+    }
+
+    /* ── Tabs ── */
+    .tabs {
+      display: flex;
+      border-bottom: 1px solid var(--border);
+      margin-bottom: 20px;
+    }
+    .tab-btn {
+      background: none;
+      border: none;
+      border-bottom: 2px solid transparent;
+      color: var(--fg-muted);
+      font-family: 'Fira Code', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      padding: 8px 18px;
+      cursor: pointer;
+      margin-bottom: -1px;
+      transition: color 0.15s;
+    }
+    .tab-btn:hover { color: var(--fg-dim); }
+    .tab-btn.active { color: var(--fg); border-bottom-color: var(--fg); }
+
+    .tab-panel { display: none; }
+    .tab-panel.active { display: block; }
+
+    /* ── Info rows ── */
+    .info-list { list-style: none; }
+    .info-item { padding: 14px 0; border-bottom: 1px solid var(--fg-ghost); }
+    .info-item:last-child { border-bottom: none; }
+
+    .info-row {
+      display: flex;
+      gap: 12px;
+      align-items: baseline;
+    }
+    .info-key {
+      font-size: 0.65rem;
+      letter-spacing: 1px;
+      color: var(--fg-muted);
+      white-space: nowrap;
+      min-width: 90px;
+    }
+    .info-val {
+      font-size: 0.8rem;
+      color: var(--fg-dim);
+    }
+    .info-title {
+      font-size: 0.82rem;
+      font-weight: 700;
+      color: var(--fg);
+      margin-bottom: 6px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .info-desc {
+      font-size: 0.78rem;
+      color: var(--fg-dim);
+      line-height: 1.8;
+    }
+    .tag-cost {
+      font-size: 0.62rem;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 1px 6px;
+      letter-spacing: 1px;
+      opacity: 0.8;
+    }
+    .tag-ability {
+      font-size: 0.62rem;
+      color: var(--fg-muted);
+      border: 1px solid var(--fg-ghost);
+      padding: 1px 6px;
+      letter-spacing: 1px;
+    }
+
+    /* character cards */
+    .char-item {
+      padding: 14px 0;
+      border-bottom: 1px solid var(--fg-ghost);
+    }
+    .char-item:last-child { border-bottom: none; }
+    .char-item.locked { opacity: 0.25; pointer-events: none; }
+
+    .char-head {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      margin-bottom: 6px;
+    }
+    .char-name {
+      font-size: 0.85rem;
+      font-weight: 700;
+      color: var(--fg);
+    }
+    .char-meta {
+      font-size: 0.68rem;
+      color: var(--fg-muted);
+      margin-top: 2px;
+      letter-spacing: 0.5px;
+    }
+    .lock-badge {
+      font-size: 0.62rem;
+      color: var(--accent);
+      border: 1px solid var(--accent);
+      padding: 1px 6px;
+      letter-spacing: 1px;
+      white-space: nowrap;
+      opacity: 0.7;
+    }
+    .char-desc {
+      font-size: 0.77rem;
+      color: var(--fg-dim);
+      line-height: 1.8;
+    }
+    .char-unlock {
+      font-size: 0.65rem;
+      color: var(--accent2);
+      margin-top: 6px;
+      display: none;
+    }
+
+    /* ── Action button ── */
+    .action-btn {
+      display: block;
+      width: 100%;
+      margin-top: 24px;
+      background: none;
+      border: 1px solid var(--fg-dim);
+      color: var(--fg-dim);
+      font-family: 'Fira Code', monospace;
+      font-size: 0.72rem;
+      letter-spacing: 2px;
+      padding: 12px;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .action-btn:hover {
+      border-color: var(--fg);
+      color: var(--fg);
+      background: var(--bg3);
+    }
+
+    /* ── System log ── */
+    .sys-log {
+      margin-top: 16px;
+      padding: 10px 14px;
+      border-left: 2px solid var(--fg-muted);
+      background: var(--bg2);
+      font-size: 0.72rem;
+      color: var(--fg-dim);
+      min-height: 40px;
+    }
+    .sys-log .prefix { color: var(--fg-muted); }
+
+    /* progress bar */
+    .prog-wrap {
+      margin-top: 8px;
+      height: 2px;
+      background: var(--fg-ghost);
+    }
+    .prog-bar {
+      height: 100%;
+      background: var(--fg-dim);
+      width: 0%;
+      transition: width 0.4s ease;
+    }
+  </style>
+</head>
+<body>
+<div id="root">
+
+  <!-- WARNING OVERLAY -->
+  <div id="warn-overlay">
+    <div class="warn-tag">!! SYSTEM_ALERT · ABILITY_SYNC_WARNING !!</div>
+    <div class="warn-title" id="warn-title">—</div>
+    <div class="warn-desc" id="warn-desc"></div>
+    <div class="warn-cost" id="warn-cost"></div>
+    <button class="warn-ok" onclick="proceedToMain()">[ ACCEPT AND ENTER ]</button>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN 1 · NAME
+  ════════════════════════════════ -->
+  <div class="screen active" id="screen-name">
+    <div class="t-header">
+      <span>ANGEL_HEART_INDICATOR <span class="hl">v1.0</span></span>
+      <span>BOOT_SEQUENCE</span>
+    </div>
+
+    <div class="boot-log">
+      <div>> <span class="ok">[ OK ]</span>  LOOP_CORE .............. STABLE</div>
+      <div>> <span class="ok">[ OK ]</span>  FEATHER_DB ............. LINKED</div>
+      <div>> <span class="ok">[ OK ]</span>  CAUSALITY_ENGINE ....... NOMINAL</div>
+      <div>> <span class="warn">[ ?? ]</span>  OPERATOR_ID ............ NOT FOUND</div>
+      <div>> <span class="err">[ !! ]</span>  USER_IDENTITY .......... UNREGISTERED</div>
+    </div>
+
+    <div class="name-prompt">> OPERATOR IDENTIFICATION REQUIRED.</div>
+    <div class="name-prompt">> ENTER CODENAME TO PROCEED.</div>
+    <br>
+    <div class="name-row">
+      <span>LOGIN:&nbsp;</span>
+      <input class="name-input cursor" id="name-input" type="text" maxlength="16" placeholder="코드네임 입력" autocomplete="off" />
+    </div>
+    <div class="name-enter">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;[ENTER] to confirm</div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN 2 · FEATHER SELECT
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-feather">
+    <div class="t-header">
+      <span>ABILITY_CORE_SELECT</span>
+      <span class="hl" id="fs-user">—</span>
+    </div>
+
+    <div class="feather-q">
+      > QUERY :<br>
+      <span class="hl">죽기 직전, 당신의 손에 쥐어진</span><br>
+      <span class="hl">마지막 깃털은 무엇입니까?</span>
+    </div>
+    <div class="feather-sub">SELECT ONE FEATHER · 각인될 권능을 선택하십시오</div>
+
+    <div class="feather-grid">
+      <div class="f-card"
+        data-id="seraphim"
+        data-name="SERAPHIM  /  세라핌"
+        data-desc="절대적 파괴와 지배의 권능. 타인을 무조건 복종시킨다. 복종을 거부하는 자는 불태워 소멸한다."
+        data-cost="대가 : 순수한 영혼 · 수명 전체"
+        onclick="selectFeather(this)">
+        <span class="f-icon">🔥</span>
+        <div class="f-name">SERAPHIM</div>
+        <div class="f-cost">순수한 영혼 · 수명</div>
+      </div>
+      <div class="f-card"
+        data-id="ophanim"
+        data-name="OPHANIM  /  오파님"
+        data-desc="강철의 규율로 대상을 물리적·정신적으로 묶어두는 속박의 권능. 한 번 걸린 속박은 영원히 풀리지 않는다."
+        data-cost="대가 : 육체 고통 · 사지 제물"
+        onclick="selectFeather(this)">
+        <span class="f-icon">⚙️</span>
+        <div class="f-name">OPHANIM</div>
+        <div class="f-cost">육체 고통 · 사지</div>
+      </div>
+      <div class="f-card"
+        data-id="potestates"
+        data-name="POTESTATES  /  포테스타테스"
+        data-desc="한계를 넘어선 신체 초월과 처참한 도살의 권능. 몸이 부서질 때까지 싸울 수 있다."
+        data-cost="대가 : 살육 · 신선한 혈액"
+        onclick="selectFeather(this)">
+        <span class="f-icon">🩸</span>
+        <div class="f-name">POTESTATES</div>
+        <div class="f-cost">살육 · 신선한 혈액</div>
+      </div>
+      <div class="f-card"
+        data-id="principatus"
+        data-name="PRINCIPATUS  /  프린시파티스"
+        data-desc="현실과 인지를 기만하는 조작과 절대적 은폐의 권능. 존재 자체를 지울 수 있다."
+        data-cost="대가 : 이성 · 비밀 · 타락의 쾌락"
+        onclick="selectFeather(this)">
+        <span class="f-icon">🌫️</span>
+        <div class="f-name">PRINCIPATUS</div>
+        <div class="f-cost">이성 · 비밀</div>
+      </div>
+      <div class="f-card"
+        data-id="virtutes"
+        data-name="VIRTUTES  /  버추즈"
+        data-desc="상대를 옭아매고 소멸로 이끄는 기만적 기적의 권능. 약속한 자는 끝내 파멸한다."
+        data-cost="대가 : 맹목적 맹세 · 가문 몰락"
+        onclick="selectFeather(this)">
+        <span class="f-icon">❄️</span>
+        <div class="f-name">VIRTUTES</div>
+        <div class="f-cost">맹목적 맹세 · 가문</div>
+      </div>
+      <div class="f-card"
+        data-id="chronotim"
+        data-name="CHRONOTIM  /  크로노팀"
+        data-desc="대상의 시간 축을 뒤틀고 모든 것을 허무로 돌리는 쇠락의 권능. 시간 자체가 적이 된다."
+        data-cost="대가 : 기억 전체 · 인과 흔적"
+        onclick="selectFeather(this)">
+        <span class="f-icon">⏳</span>
+        <div class="f-name">CHRONOTIM</div>
+        <div class="f-cost">기억 전체 · 인과</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- ════════════════════════════════
+       SCREEN 3 · MAIN PANEL
+  ════════════════════════════════ -->
+  <div class="screen" id="screen-main">
+
+    <div class="t-header">
+      <span>ANGEL_HEART_INDICATOR <span class="hl">v1.0</span></span>
+      <span>LOOP_STABLE</span>
+    </div>
+
+    <!-- STATUS -->
+    <div class="stat-grid">
+      <div class="stat-cell">
+        <div class="lbl">USER</div>
+        <div class="stat-val" id="main-user">—</div>
+      </div>
+      <div class="stat-cell">
+        <div class="lbl">TIER</div>
+        <div class="stat-val" id="main-tier">말단 조직원</div>
+      </div>
+      <div class="stat-cell">
+        <div class="lbl">LEVEL</div>
+        <div class="stat-val" id="main-lv">01</div>
+      </div>
+      <div class="stat-cell">
+        <div class="lbl">SYNC</div>
+        <div class="stat-val" id="main-sync">0%</div>
+      </div>
+    </div>
+
+    <div class="stat-grid" style="margin-bottom: 24px; grid-template-columns: 1fr 1fr;">
+      <div class="stat-cell ability">
+        <div class="lbl">각인된 권능</div>
+        <div class="stat-val" id="main-ability">—</div>
+      </div>
+      <div class="stat-cell">
+        <div class="lbl">권능 대가</div>
+        <div class="stat-val" style="font-size:0.72rem; color: var(--accent);" id="main-cost">—</div>
+      </div>
+    </div>
+
+    <!-- TABS -->
+    <div class="tabs">
+      <button class="tab-btn active" onclick="switchTab(0)">WORLD</button>
+      <button class="tab-btn" onclick="switchTab(1)">FEATHER</button>
+      <button class="tab-btn" onclick="switchTab(2)">TARGETS</button>
+    </div>
+
+    <!-- ── TAB: WORLD ── -->
+    <div class="tab-panel active" id="tp-world">
+      <ul class="info-list">
+
+        <li class="info-item">
+          <div class="info-title">
+            매개체 : 깃털
+            <span class="tag-ability">CORE_ITEM</span>
+          </div>
+          <div class="info-desc">
+            타락 천사의 권능을 농축한 매개. 인간의 몸에 주입·흡수되면 기형적인 날개가 돋아나며 권능의 일부를 다룰 수 있게 된다. 단, 사용할수록 성력을 버티지 못해 괴물화하거나 영혼이 천사에게 동화되어 소멸한다.
+          </div>
+          <div class="info-row" style="margin-top:8px;">
+            <span class="info-key">위험 등급</span>
+            <span class="info-val" style="color:var(--accent)">EXTREME / 자기 파괴 위험 상존</span>
+          </div>
+        </li>
+
+        <li class="info-item">
+          <div class="info-title">
+            밀레오네 패밀리
+            <span class="tag-ability">FACTION</span>
+          </div>
+          <div class="info-desc">
+            도시의 깃털 거래 권력을 독점한 거대 범죄 조직. 소속원 대부분이 날개를 지닌 권능 사용자이며, 조직 내부에 세밀한 위계가 존재한다.
+          </div>
+          <div class="info-row" style="margin-top:8px;">
+            <span class="info-key">플레이어 시작점</span>
+            <span class="info-val">말단 조직원 — 입단 첫날로 회귀</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">회귀 트리거</span>
+            <span class="info-val">죽음 직전 크로노팀 권능 발동</span>
+          </div>
+        </li>
+
+        <li class="info-item">
+          <div class="info-title">
+            인과율의 법칙
+            <span class="tag-ability">WORLD_RULE</span>
+          </div>
+          <div class="info-desc">
+            회귀가 발동되면 인과율이 재편된다. 일반 인간은 과거 시간선의 기억을 잃지만, 높은 위계를 지닌 고위 천사들은 회귀 전 기억을 온전히 보존한다.
+          </div>
+          <div class="info-row" style="margin-top:8px;">
+            <span class="info-key">인간</span>
+            <span class="info-val">기억 소멸 / 재편</span>
+          </div>
+          <div class="info-row">
+            <span class="info-key">고위 천사</span>
+            <span class="info-val" style="color:var(--accent2)">기억 보존 / 대응 가능</span>
+          </div>
+        </li>
+
+      </ul>
+    </div>
+
+    <!-- ── TAB: FEATHER ── -->
+    <div class="tab-panel" id="tp-feather">
+      <ul class="info-list">
+
+        <li class="info-item">
+          <div class="info-title">
+            🔥 세라핌 — SERAPHIM
+            <span class="tag-cost">순수한 영혼 · 수명</span>
+          </div>
+          <div class="info-desc">절대적인 파괴와 지배. 타인을 무조건 복종시키는 권능. 복종을 거부하는 의지는 불태워 소멸한다.</div>
+        </li>
+
+        <li class="info-item">
+          <div class="info-title">
+            ⚙️ 오파님 — OPHANIM
+            <span class="tag-cost">육체 고통 · 사지 제물</span>
+          </div>
+          <div class="info-desc">강철의 규율을 강제하고 대상을 물리·정신적으로 묶어두는 속박. 한 번 걸린 구속은 영구적이다.</div>
+        </li>
+
+        <li class="info-item">
+          <div class="info-title">
+            🩸 포테스타테스 — POTESTATES
+            <span class="tag-cost">살육 · 신선한 혈액</span>
+          </div>
+          <div class="info-desc">인간 한계를 아득히 넘어서는 신체 초월과 처참한 도살의 권능. 몸이 파괴되어도 계속 싸운다.</div>
+        </li>
+
+        <li class="info-item">
+          <div class="info-title">
+            🌫️ 프린시파티스 — PRINCIPATUS
+            <span class="tag-cost">이성 · 비밀 · 타락의 쾌락</span>
+          </div>
+          <div class="info-desc">현실과 인지 구조를 기만하는 조작 및 절대적 은폐. 존재 자체를 현실에서 지워낼 수 있다.</div>
+        </li>
+
+        <li class="info-item">
+          <div class="info-title">
+            ❄️ 버추즈 — VIRTUTES
+            <span class="tag-cost">맹목적 맹세 · 가문 몰락</span>
+          </div>
+          <div class="info-desc">상대를 옭아매고 소멸로 이끄는 기만적 기적의 권능. 약속을 맺은 자는 반드시 파멸로 향한다.</div>
+        </li>
+
+        <li class="info-item">
+          <div class="info-title">
+            ⏳ 크로노팀 — CHRONOTIM
+            <span class="tag-cost">기억 전체 · 인과 흔적</span>
+          </div>
+          <div class="info-desc">대상의 시간 축을 뒤틀거나 모든 것을 허무로 돌리는 쇠락의 권능. 시간 자체가 무기가 된다.</div>
+        </li>
+
+      </ul>
+    </div>
+
+    <!-- ── TAB: TARGETS ── -->
+    <div class="tab-panel" id="tp-targets">
+
+      <div class="char-item" id="ch-kardan">
+        <div class="char-head">
+          <div>
+            <div class="char-name">카르단  /  KARDAN</div>
+            <div class="char-meta">31세 · 191cm · 날개 1쌍 · OPHANIM 계열</div>
+          </div>
+          <span class="tag-ability">패밀리 2인자</span>
+        </div>
+        <div class="char-desc">
+          흑발, 푸른 눈. 예민하고 냉정한 성격. 천사에게 영혼을 저당 잡혔으나 오히려 그들의 약점을 쥐고 협박하는 독종. 낮고 느린 존댓말을 구사하며 감정을 철저히 통제한다.
+        </div>
+      </div>
+
+      <div class="char-item" id="ch-enoch">
+        <div class="char-head">
+          <div>
+            <div class="char-name">에녹  /  ENOCH</div>
+            <div class="char-meta">30세 · 193cm · 날개 1쌍 · SERAPHIM 계열</div>
+          </div>
+          <span class="tag-ability">정보 거점 운영</span>
+        </div>
+        <div class="char-desc">
+          회녹색 머리, 창백한 피부. 감정이 극도로 마모되어 무뚝뚝하다. 정보 수집 거점인 술집을 운영하며 조직의 눈과 귀 역할. 유저를 위해 스스로 회귀를 선택할 만큼 미련이 남아 있다.
+        </div>
+      </div>
+
+      <div class="char-item locked" id="ch-zahar">
+        <div class="char-head">
+          <div>
+            <div class="char-name">자하르  /  ZAHAR</div>
+            <div class="char-meta">29세 · 203cm · 날개 2쌍 · OPHANIM &amp; POTESTATES 계열</div>
+          </div>
+          <span class="lock-badge">LOCKED · LV 2</span>
+        </div>
+        <div class="char-desc">
+          패밀리 행동대장. 깃털을 3개나 흡수한 시한부. 전신 문신, 유쾌한 쾌남이지만 머리에 동생이 준 노란 삔을 꽂는 반전 성격.
+        </div>
+      </div>
+
+      <div class="char-item locked" id="ch-gabriel">
+        <div class="char-head">
+          <div>
+            <div class="char-name">가브리엘  /  GABRIEL</div>
+            <div class="char-meta">33세 · 187cm · 날개 1쌍 · PRINCIPATUS 계열</div>
+          </div>
+          <span class="lock-badge">LOCKED · LV 2</span>
+        </div>
+        <div class="char-desc">
+          패밀리 참모(콘실리에리). 백금발, 황금색 눈, 안경. 다정함을 무기로 사용하는 뱀 같은 천재. 미소 뒤에 서슴지 않는 잔인함을 숨긴다.
+        </div>
+      </div>
+
+      <div class="char-item locked" id="ch-victor">
+        <div class="char-head">
+          <div>
+            <div class="char-name">빅터  /  VICTOR</div>
+            <div class="char-meta">24세 · 185cm · 날개 1쌍 · VIRTUTES 계열</div>
+          </div>
+          <span class="lock-badge">LOCKED · LV 3</span>
+        </div>
+        <div class="char-desc">
+          치안대 깃털 담당 부서 팀장 겸 이단심문관. 갈색 울프컷, 날지 못하는 작은 날개. 압박으로 깃털을 주입당한 피해자. 깊은 자기연민과 죄책감을 지닌 냉소주의자.
+        </div>
+      </div>
+
+      <div class="char-item locked" id="ch-ivan">
+        <div class="char-head">
+          <div>
+            <div class="char-name">아이반  /  IVAN</div>
+            <div class="char-meta">?? · 170cm · 날개 1개 · CHRONOTIM 고위 천사</div>
+          </div>
+          <span class="lock-badge">LOCKED · LV 3</span>
+        </div>
+        <div class="char-desc">
+          새까만 흑발, 앳된 얼굴. 인간을 벌레 취급하나 지독한 권태 속에서 흥미로 관찰한다. 유저를 인과율의 거대한 균열로 인지.
+          <span id="ivan-true" style="display:none; color:var(--accent2); margin-top:6px; display:none;">
+            <br>[LV 4 UNLOCK] 본신 상태 : 189cm · 회백색 거대 날개 · 먼지처럼 바스러지며 피어오름 · 시계 태엽 소리 동반.
+          </span>
+        </div>
+      </div>
+
+    </div><!-- /tp-targets -->
+
+    <button class="action-btn" onclick="syncData()">[ EXECUTE_STORY_DATA_SYNC ]</button>
+
+    <div class="sys-log">
+      <span class="prefix">[SYS]&nbsp;</span><span id="log-text">인디케이터 구동 중. 회귀 동기화 및 깃털 코어 링크 완료.</span>
+      <div class="prog-wrap"><div class="prog-bar" id="prog-bar"></div></div>
+    </div>
+
+  </div><!-- /screen-main -->
+
+</div><!-- /root -->
+
+<script>
+  /* ── state ── */
+  var userName = '';
+  var selectedFeather = null;
+  var currentLv = 1;
+  var syncPct = 0;
+
+  /* ── utils ── */
+  function show(id) {
+    document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
+    document.getElementById(id).classList.add('active');
+  }
+
+  function log(msg) {
+    document.getElementById('log-text').textContent = msg;
+  }
+
+  /* ── name screen ── */
+  document.getElementById('name-input').addEventListener('keydown', function(e){
+    if (e.key === 'Enter') submitName();
+  });
+
+  function submitName() {
+    var val = document.getElementById('name-input').value.trim();
+    if (!val) {
+      document.getElementById('name-input').style.borderBottomColor = '#ff3c3c';
+      return;
+    }
+    userName = val;
+    document.getElementById('fs-user').textContent = userName;
+    show('screen-feather');
+  }
+
+  /* ── feather select ── */
+  function selectFeather(el) {
+    selectedFeather = {
+      id:   el.dataset.id,
+      name: el.dataset.name,
+      desc: el.dataset.desc,
+      cost: el.dataset.cost
+    };
+    document.getElementById('warn-title').textContent = '[ ' + selectedFeather.name + ' ]  권능 동기화 완료';
+    document.getElementById('warn-desc').textContent  = selectedFeather.desc;
+    document.getElementById('warn-cost').textContent  = selectedFeather.cost;
+    document.getElementById('warn-overlay').classList.add('show');
+  }
+
+  function proceedToMain() {
+    document.getElementById('warn-overlay').classList.remove('show');
+    document.getElementById('main-user').textContent   = userName;
+    document.getElementById('main-ability').textContent = selectedFeather ? selectedFeather.name.split('/')[0].trim() : '—';
+    document.getElementById('main-cost').textContent   = selectedFeather ? selectedFeather.cost.replace('대가 : ', '') : '—';
+    show('screen-main');
+    log(userName + ' 인증 완료. 각인된 권능 : ' + (selectedFeather ? selectedFeather.name : '—') + '. 회귀 동기화 링크 완료.');
+  }
+
+  /* ── tabs ── */
+  var tabPanels = ['tp-world', 'tp-feather', 'tp-targets'];
+  function switchTab(idx) {
+    document.querySelectorAll('.tab-btn').forEach(function(b, i){
+      b.classList.toggle('active', i === idx);
+    });
+    tabPanels.forEach(function(id, i){
+      var el = document.getElementById(id);
+      el.classList.toggle('active', i === idx);
+    });
+  }
+
+  /* ── sync / level up ── */
+  function syncData() {
+    syncPct += 50;
+    document.getElementById('prog-bar').style.width = syncPct + '%';
+
+    if (syncPct < 100) {
+      document.getElementById('main-sync').textContent = syncPct + '%';
+      log('스토리 인과율 데이터 동기화 중... (' + syncPct + '%)');
+      return;
+    }
+
+    syncPct = 0;
+    document.getElementById('prog-bar').style.width = '0%';
+    currentLv++;
+    document.getElementById('main-sync').textContent = '0%';
+    document.getElementById('main-lv').textContent = currentLv < 10 ? '0' + currentLv : '' + currentLv;
+
+    if (currentLv === 2) {
+      document.getElementById('main-tier').textContent = '정식 행동대원';
+      unlock('ch-zahar');
+      unlock('ch-gabriel');
+      log('레벨 업. 위계 [정식 행동대원] 변동. 패밀리 내부 인사 데이터 싱크 완료.');
+    } else if (currentLv === 3) {
+      document.getElementById('main-tier').textContent = '패밀리 간부';
+      unlock('ch-victor');
+      unlock('ch-ivan');
+      log('레벨 업. 위계 [패밀리 간부] 변동. 치안대 기밀 및 고위 관찰자 데이터 감지.');
+    } else if (currentLv >= 4) {
+      document.getElementById('main-tier').textContent = '밀레오네 최고 권력자';
+      var ivt = document.getElementById('ivan-true');
+      if (ivt) ivt.style.display = 'block';
+      log('최고 위계 도달. 고위 천사 아이반의 [본신 데이터] 해금.');
+    } else {
+      log('데이터 동기화 완료. 현재 레벨 : ' + currentLv);
+    }
+  }
+
+  function unlock(id) {
+    var el = document.getElementById(id);
+    if (!el) return;
+    el.classList.remove('locked');
+    var badge = el.querySelector('.lock-badge');
+    if (badge) badge.remove();
+  }
+</script>
+</body>
+</html>
