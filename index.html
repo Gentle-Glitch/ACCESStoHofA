@@ -113,3 +113,202 @@
         .info-item {
             border-bottom: 1px solid rgba(44, 53, 69, 0.4);
             padding: 12px 0;
+        }
+
+        .info-item:last-child { border: none; }
+
+        .info-title {
+            font-weight: 700;
+            color: var(--text-light);
+            margin-bottom: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .info-desc {
+            font-size: 0.85rem;
+            line-height: 1.5;
+            color: #718093;
+        }
+
+        /* 잠금 상태 */
+        .locked {
+            opacity: 0.3;
+        }
+
+        .lock-badge {
+            font-size: 0.7rem;
+            background: #2f3640;
+            color: var(--accent);
+            padding: 2px 6px;
+            font-family: 'Fira Code', monospace;
+        }
+
+        /* 조작 버튼 */
+        .action-btn {
+            width: 100%;
+            background: var(--neon-dim);
+            border: 1px solid var(--neon);
+            color: var(--neon);
+            padding: 12px;
+            font-weight: 700;
+            cursor: pointer;
+            font-family: 'Fira Code', monospace;
+            margin-top: 20px;
+            transition: all 0.2s;
+        }
+
+        .action-btn:hover {
+            background: var(--neon);
+            color: var(--bg);
+        }
+
+        /* 로그 */
+        .sys-log {
+            font-family: 'Fira Code', monospace;
+            font-size: 0.8rem;
+            color: var(--neon);
+            background: #05070a;
+            padding: 12px;
+            margin-top: 20px;
+            border-left: 2px solid var(--neon);
+            height: 50px;
+            overflow-y: hidden;
+        }
+    </style>
+</head>
+<body>
+
+<div id="system-panel">
+    <div class="system-header">
+        <span>ANGEL_HEART_INDICATOR_v1.0</span>
+        <span>LOOP_STABLE</span>
+    </div>
+
+    <div class="status-grid">
+        <div class="status-item">
+            <div class="status-label">USER</div>
+            <div class="status-value">{{user}}</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">TIER</div>
+            <div class="status-value" id="tier">말단 조직원</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">LEVEL</div>
+            <div class="status-value" id="lv">01</div>
+        </div>
+        <div class="status-item">
+            <div class="status-label">SYNCHRONIZATION</div>
+            <div class="status-value" id="exp">0%</div>
+        </div>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab(0)">WORLD</button>
+        <button class="tab-btn" onclick="switchTab(1)">FEATHER</button>
+        <button class="tab-btn" onclick="switchTab(2)">TARGETS</button>
+    </div>
+
+    <div class="content-section active" id="sec-world">
+        <ul class="info-list">
+            <li class="info-item">
+                <div class="info-title">밀레오네 패밀리</div>
+                <div class="info-desc">도시의 깃털 거래를 독점한 권력 집단. 대부분 권능을 주입받아 기형적인 날개를 지님.</div>
+            </li>
+            <li class="info-item">
+                <div class="info-title">주입 부작용</div>
+                <div class="info-desc">권능 사용 시 영혼 마모. 한계를 초과하면 괴물로 변이하거나 영혼이 소멸함.</div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content-section" id="sec-feather">
+        <ul class="info-list">
+            <li class="info-item">
+                <div class="info-title">🔥 세라핌 <span style="color:var(--accent); font-size:0.75rem;">[대가: 순수한 영혼·수명]</span></div>
+                <div class="info-desc">절대적인 파괴와 타인을 찍어누르는 지배력을 행사합니다.</div>
+            </li>
+            <li class="info-item">
+                <div class="info-title">⚙️ 오파님 <span style="color:var(--accent); font-size:0.75rem;">[대가: 신체 고통·사지 제물]</span></div>
+                <div class="info-desc">강철의 규율을 강제하며 대상을 물리적으로 묶어 속박합니다.</div>
+            </li>
+            <li class="info-item">
+                <div class="info-title">⏳ 크로노팀 <span style="color:var(--accent); font-size:0.75rem;">[대가: 기억 전체·인과 흔적]</span></div>
+                <div class="info-desc">시간을 다루고 대상을 쇠락시킵니다. 고위 천사 계열.</div>
+            </li>
+        </ul>
+    </div>
+
+    <div class="content-section" id="sec-targets">
+        <ul class="info-list">
+            <li class="info-item">
+                <div class="info-title">카르단 (31 / 191cm)</div>
+                <div class="info-desc">패밀리 2인자. 예민하고 서늘한 분위기. 천사들의 약점을 잡고 흔드는 독종. 낮고 부드러운 존댓말 구사.</div>
+            </li>
+            <li class="info-item locked" id="target-zahar">
+                <div class="info-title">자하르 (29 / 203cm) <span class="lock-badge">REQ: LV 2</span></div>
+                <div class="info-desc">패밀리 행동대장. 거친 쾌남 스타일의 문신투성이 사내. 깃털을 3개 흡수한 시한부.</div>
+            </li>
+            <li class="info-item locked" id="target-ivan">
+                <div class="info-title">아이반 (?? / 170cm) <span class="lock-badge">REQ: LV 3</span></div>
+                <div class="info-desc">크로노팀 고위 천사. 앳된 얼굴과 대조되는 완전한 무감각. 인간의 인과율을 흥미 위주로 관찰함.</div>
+            </li>
+        </ul>
+    </div>
+
+    <button class="action-btn" onclick="syncData()">[EXECUTE_STORY_DATA_SYNC]</button>
+
+    <div class="sys-log" id="log-display">
+        [SYSTEM] 인디케이터 정상 정상 가동 중. 회귀 지점 동기화 완료.
+    </div>
+</div>
+
+<script>
+    let currentLv = 1;
+    let syncPercent = 0;
+
+    function switchTab(idx) {
+        const btns = document.querySelectorAll('.tab-btn');
+        const secs = document.querySelectorAll('.content-section');
+        btns.forEach((b, i) => {
+            b.classList.toggle('active', i === idx);
+            secs[i].classList.toggle('active', i === idx);
+        });
+    }
+
+    function syncData() {
+        syncPercent += 50;
+        if (syncPercent >= 100) {
+            syncPercent = 0;
+            currentLv++;
+            
+            document.getElementById('lv').innerText = currentLv < 10 ? '0' + currentLv : currentLv;
+            
+            if (currentLv === 2) {
+                document.getElementById('tier').innerText = "정식 행동대원";
+                document.getElementById('target-zahar').classList.remove('locked');
+                document.getElementById('target-zahar').querySelector('.lock-badge').remove();
+                printLog("레벨 업. 위계가 [정식 행동대원]으로 상승했습니다.");
+            } else if (currentLv === 3) {
+                document.getElementById('tier').innerText = "패밀리 간부";
+                document.getElementById('target-ivan').classList.remove('locked');
+                document.getElementById('target-ivan').querySelector('.lock-badge').remove();
+                printLog("레벨 업. 위계가 [패밀리 간부]로 상승했습니다. 고위 천사 감지.");
+            } else {
+                printLog(`데이터 동기화 완료. 현재 레벨: ${currentLv}`);
+            }
+        } else {
+            printLog(`스토리 인과율 동기화 중... (${syncPercent}%)`);
+        }
+        document.getElementById('exp').innerText = syncPercent + "%";
+    }
+
+    function printLog(msg) {
+        document.getElementById('log-display').innerText = `[SYSTEM] ${msg}`;
+    }
+</script>
+
+</body>
+</html>
