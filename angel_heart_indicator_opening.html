@@ -1,0 +1,662 @@
+
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500;700&family=Noto+Sans+KR:wght@300;400;700&display=swap');
+
+  .ah-root {
+    background: #090a0f;
+    color: #a5b1c2;
+    font-family: 'Noto Sans KR', sans-serif;
+    min-height: 520px;
+    padding: 0;
+    position: relative;
+    overflow: hidden;
+  }
+
+  .ah-screen {
+    display: none;
+    width: 100%;
+    animation: ah-fadein 0.6s ease forwards;
+  }
+  .ah-screen.active { display: block; }
+
+  @keyframes ah-fadein {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  .ah-mono { font-family: 'Fira Code', monospace; }
+
+  /* ── NAME SCREEN ── */
+  .name-wrap {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    min-height: 480px;
+    padding: 40px 20px;
+    text-align: center;
+  }
+  .name-tag {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.7rem;
+    letter-spacing: 3px;
+    color: #4ffbdf;
+    margin-bottom: 32px;
+    opacity: 0.7;
+  }
+  .name-title {
+    font-size: 1.05rem;
+    color: #f5f6fa;
+    font-weight: 300;
+    line-height: 1.8;
+    margin-bottom: 36px;
+    letter-spacing: 0.5px;
+  }
+  .name-input-row {
+    display: flex;
+    gap: 0;
+    width: 100%;
+    max-width: 340px;
+  }
+  .name-input {
+    flex: 1;
+    background: #11141a;
+    border: 1px solid #2c3545;
+    border-right: none;
+    color: #f5f6fa;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.9rem;
+    padding: 11px 16px;
+    outline: none;
+    transition: border-color 0.2s;
+  }
+  .name-input:focus { border-color: #4ffbdf; }
+  .name-input::placeholder { color: #3d4a5a; }
+  .name-btn {
+    background: rgba(79,251,223,0.1);
+    border: 1px solid #4ffbdf;
+    color: #4ffbdf;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+    padding: 11px 20px;
+    cursor: pointer;
+    letter-spacing: 1px;
+    transition: all 0.2s;
+    white-space: nowrap;
+  }
+  .name-btn:hover { background: #4ffbdf; color: #090a0f; }
+
+  /* ── FEATHER SELECT SCREEN ── */
+  .feather-wrap {
+    padding: 32px 20px 28px;
+  }
+  .feather-q {
+    font-size: 0.95rem;
+    color: #f5f6fa;
+    font-weight: 300;
+    line-height: 1.9;
+    text-align: center;
+    margin-bottom: 8px;
+    letter-spacing: 0.3px;
+  }
+  .feather-sub {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    color: #4ffbdf;
+    text-align: center;
+    letter-spacing: 2px;
+    opacity: 0.6;
+    margin-bottom: 28px;
+  }
+  .feather-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 10px;
+  }
+  @media (max-width: 480px) {
+    .feather-grid { grid-template-columns: repeat(2, 1fr); }
+  }
+
+  .feather-card {
+    background: #11141a;
+    border: 1px solid #2c3545;
+    padding: 18px 12px 16px;
+    cursor: pointer;
+    text-align: center;
+    transition: all 0.22s;
+    position: relative;
+    overflow: hidden;
+  }
+  .feather-card::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    transition: opacity 0.22s;
+  }
+  .feather-card:hover { border-color: var(--fc); transform: translateY(-2px); }
+  .feather-card:hover::before { opacity: 1; background: rgba(79,251,223,0.04); }
+
+  .feather-card[data-id="seraphim"]  { --fc: #ff6b6b; }
+  .feather-card[data-id="ophanim"]   { --fc: #a8b5c8; }
+  .feather-card[data-id="potestates"]{ --fc: #c0392b; }
+  .feather-card[data-id="principatus"]{ --fc: #9b59b6; }
+  .feather-card[data-id="virtutes"]  { --fc: #74b9ff; }
+  .feather-card[data-id="chronotim"] { --fc: #ffeaa7; }
+
+  .feather-card:hover .f-icon { color: var(--fc); transform: scale(1.15); }
+  .feather-card:hover .f-name { color: var(--fc); }
+
+  .f-icon {
+    font-size: 1.8rem;
+    margin-bottom: 10px;
+    transition: all 0.22s;
+    display: block;
+  }
+  .f-name {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.78rem;
+    font-weight: 700;
+    color: #f5f6fa;
+    letter-spacing: 1px;
+    margin-bottom: 6px;
+    transition: color 0.22s;
+  }
+  .f-cost {
+    font-size: 0.72rem;
+    color: #ff5252;
+    opacity: 0.75;
+    line-height: 1.4;
+  }
+
+  /* ── WARNING FLASH ── */
+  .warning-overlay {
+    display: none;
+    position: absolute;
+    inset: 0;
+    background: rgba(9, 10, 15, 0.97);
+    z-index: 100;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 40px 24px;
+    text-align: center;
+  }
+  .warning-overlay.show { display: flex; animation: ah-fadein 0.2s ease; }
+  .warn-label {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    letter-spacing: 4px;
+    color: #ff5252;
+    margin-bottom: 20px;
+    opacity: 0.8;
+  }
+  .warn-main {
+    font-family: 'Fira Code', monospace;
+    font-size: 1.4rem;
+    color: #f5f6fa;
+    font-weight: 700;
+    letter-spacing: 2px;
+    margin-bottom: 16px;
+  }
+  .warn-detail {
+    font-size: 0.88rem;
+    color: #718093;
+    line-height: 1.8;
+    max-width: 320px;
+    margin-bottom: 28px;
+  }
+  .warn-cost-box {
+    border: 1px solid #ff5252;
+    padding: 12px 28px;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.8rem;
+    color: #ff5252;
+    letter-spacing: 1px;
+    margin-bottom: 32px;
+    animation: pulse-warn 1.4s ease infinite;
+  }
+  @keyframes pulse-warn {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.5; }
+  }
+  .warn-proceed {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.72rem;
+    color: #4ffbdf;
+    letter-spacing: 2px;
+    opacity: 0.6;
+    cursor: pointer;
+    border-bottom: 1px solid rgba(79,251,223,0.3);
+    padding-bottom: 2px;
+    background: none;
+    border-top: none;
+    border-left: none;
+    border-right: none;
+  }
+  .warn-proceed:hover { opacity: 1; }
+
+  /* ── MAIN PANEL ── */
+  #system-panel {
+    width: 100%;
+    background: #11141a;
+    border: 1px solid #2c3545;
+    padding: 25px;
+    box-sizing: border-box;
+  }
+  .system-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.82rem;
+    letter-spacing: 1px;
+    color: #4ffbdf;
+    margin-bottom: 25px;
+    border-bottom: 1px solid #2c3545;
+    padding-bottom: 12px;
+  }
+  .status-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    margin-bottom: 25px;
+  }
+  .status-item {
+    background: rgba(0,0,0,0.2);
+    border-left: 3px solid #4ffbdf;
+    padding: 10px 15px;
+  }
+  .status-label {
+    font-size: 0.72rem;
+    color: #718093;
+    margin-bottom: 4px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+  }
+  .status-value {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #f5f6fa;
+  }
+  .nav-tabs {
+    display: flex;
+    border-bottom: 1px solid #2c3545;
+    margin-bottom: 20px;
+  }
+  .tab-btn {
+    padding: 10px 20px;
+    background: none;
+    border: none;
+    color: #718093;
+    font-weight: 700;
+    font-size: 0.88rem;
+    cursor: pointer;
+    font-family: 'Noto Sans KR', sans-serif;
+  }
+  .tab-btn.active { color: #4ffbdf; border-bottom: 2px solid #4ffbdf; }
+  .content-section { display: none; }
+  .content-section.active { display: block; }
+  .info-list { list-style: none; padding: 0; margin: 0; }
+  .info-item { border-bottom: 1px solid rgba(44,53,69,0.4); padding: 12px 0; }
+  .info-item:last-child { border: none; }
+  .info-title {
+    font-weight: 700;
+    color: #f5f6fa;
+    margin-bottom: 4px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-size: 0.95rem;
+  }
+  .info-desc { font-size: 0.83rem; line-height: 1.6; color: #718093; }
+  .locked { opacity: 0.3; }
+  .lock-badge {
+    font-size: 0.68rem;
+    background: #2f3640;
+    color: #ff5252;
+    padding: 2px 6px;
+    font-family: 'Fira Code', monospace;
+  }
+  .action-btn {
+    width: 100%;
+    background: rgba(79,251,223,0.1);
+    border: 1px solid #4ffbdf;
+    color: #4ffbdf;
+    padding: 12px;
+    font-weight: 700;
+    cursor: pointer;
+    font-family: 'Fira Code', monospace;
+    font-size: 0.82rem;
+    margin-top: 20px;
+    letter-spacing: 1px;
+  }
+  .action-btn:hover { background: #4ffbdf; color: #090a0f; }
+  .sys-log {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.78rem;
+    color: #4ffbdf;
+    background: #05070a;
+    padding: 12px;
+    margin-top: 20px;
+    border-left: 2px solid #4ffbdf;
+    min-height: 44px;
+  }
+  .ability-badge {
+    font-family: 'Fira Code', monospace;
+    font-size: 0.65rem;
+    padding: 2px 8px;
+    background: rgba(79,251,223,0.1);
+    border: 1px solid rgba(79,251,223,0.3);
+    color: #4ffbdf;
+    letter-spacing: 1px;
+    margin-left: 8px;
+  }
+</style>
+
+<div class="ah-root" id="ah-root">
+
+  <div class="warning-overlay" id="warn-overlay">
+    <div class="warn-label">⚠ SYSTEM_ALERT · 권능 동기화 경고</div>
+    <div class="warn-main" id="warn-name-display">— —</div>
+    <div class="warn-detail" id="warn-desc"></div>
+    <div class="warn-cost-box" id="warn-cost"></div>
+    <button class="warn-proceed" id="warn-ok" onclick="proceedToMain()">[ 수락하고 진입 ]</button>
+  </div>
+
+  <!-- SCREEN 1: NAME -->
+  <div class="ah-screen active" id="screen-name">
+    <div class="name-wrap">
+      <div class="name-tag">ANGEL_HEART_INDICATOR_v1.0 · BOOT_SEQUENCE</div>
+      <div class="name-title">
+        당신은 방금 죽었습니다.<br>
+        그리고 깨어난 곳은 — 오늘, 입단 첫날.<br>
+        <br>
+        시스템에 접속하기 전, 당신의 이름을 입력하십시오.
+      </div>
+      <div class="name-input-row">
+        <input class="name-input" id="name-input" type="text" maxlength="12" placeholder="코드네임 입력" />
+        <button class="name-btn" onclick="submitName()">ENTER</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 2: FEATHER SELECT -->
+  <div class="ah-screen" id="screen-feather">
+    <div class="feather-wrap">
+      <div class="feather-q">
+        죽기 직전, 당신의 손에 쥐어진<br>마지막 깃털은 무엇입니까?
+      </div>
+      <div class="feather-sub">SELECT_FEATHER · 각인될 권능을 선택하십시오</div>
+
+      <div class="feather-grid">
+        <div class="feather-card" data-id="seraphim"
+          data-name="세라핌"
+          data-desc="절대적 파괴와 지배의 권능. 타인을 무조건 복종시킨다."
+          data-cost="대가 : 순수한 영혼 · 수명 전체"
+          onclick="selectFeather(this)">
+          <span class="f-icon">🔥</span>
+          <div class="f-name">SERAPHIM</div>
+          <div class="f-cost">순수한 영혼 · 수명</div>
+        </div>
+        <div class="feather-card" data-id="ophanim"
+          data-name="오파님"
+          data-desc="강철의 규율로 대상을 물리적·정신적으로 묶어두는 속박의 권능."
+          data-cost="대가 : 육체 고통 · 사지 제물"
+          onclick="selectFeather(this)">
+          <span class="f-icon">⚙️</span>
+          <div class="f-name">OPHANIM</div>
+          <div class="f-cost">육체 고통 · 사지</div>
+        </div>
+        <div class="feather-card" data-id="potestates"
+          data-name="포테스타테스"
+          data-desc="한계를 넘어선 신체 초월과 처참한 도살의 권능."
+          data-cost="대가 : 살육 · 신선한 혈액"
+          onclick="selectFeather(this)">
+          <span class="f-icon">🩸</span>
+          <div class="f-name">POTESTATES</div>
+          <div class="f-cost">살육 · 신선한 혈액</div>
+        </div>
+        <div class="feather-card" data-id="principatus"
+          data-name="프린시파티스"
+          data-desc="현실과 인지를 기만하는 조작과 절대적 은폐의 권능."
+          data-cost="대가 : 이성 · 비밀 · 타락의 쾌락"
+          onclick="selectFeather(this)">
+          <span class="f-icon">🌫️</span>
+          <div class="f-name">PRINCIPATUS</div>
+          <div class="f-cost">이성 · 비밀</div>
+        </div>
+        <div class="feather-card" data-id="virtutes"
+          data-name="버추즈"
+          data-desc="상대를 옭아매고 소멸로 이끄는 기만적 기적의 권능."
+          data-cost="대가 : 맹목적 맹세 · 가문 몰락"
+          onclick="selectFeather(this)">
+          <span class="f-icon">❄️</span>
+          <div class="f-name">VIRTUTES</div>
+          <div class="f-cost">맹목적 맹세 · 가문</div>
+        </div>
+        <div class="feather-card" data-id="chronotim"
+          data-name="크로노팀"
+          data-desc="대상의 시간 축을 뒤틀고 모든 것을 허무로 돌리는 쇠락의 권능."
+          data-cost="대가 : 기억 전체 · 인과 흔적"
+          onclick="selectFeather(this)">
+          <span class="f-icon">⏳</span>
+          <div class="f-name">CHRONOTIM</div>
+          <div class="f-cost">기억 전체 · 인과</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- SCREEN 3: MAIN PANEL -->
+  <div class="ah-screen" id="screen-main">
+    <div id="system-panel">
+      <div class="system-header">
+        <span>ANGEL_HEART_INDICATOR_v1.0</span>
+        <span>LOOP_STABLE</span>
+      </div>
+      <div class="status-grid">
+        <div class="status-item">
+          <div class="status-label">USER</div>
+          <div class="status-value" id="main-user">—</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">TIER</div>
+          <div class="status-value" id="tier">말단 조직원</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">LEVEL</div>
+          <div class="status-value" id="lv">01</div>
+        </div>
+        <div class="status-item">
+          <div class="status-label">SYNCHRONIZATION</div>
+          <div class="status-value" id="exp">0%</div>
+        </div>
+      </div>
+
+      <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab(0)">WORLD</button>
+        <button class="tab-btn" onclick="switchTab(1)">FEATHER</button>
+        <button class="tab-btn" onclick="switchTab(2)">TARGETS</button>
+      </div>
+
+      <div class="content-section active" id="sec-world">
+        <ul class="info-list">
+          <li class="info-item">
+            <div class="info-title">매개체: 깃털</div>
+            <div class="info-desc">타락 천사의 권능을 담은 매개. 몸에 주입·흡수한 인간은 기형적인 날개가 돋아나며 힘을 일부 다루지만, 사용할수록 성력을 버티지 못해 괴물이 되거나 영혼이 동화되어 타 죽음.</div>
+          </li>
+          <li class="info-item">
+            <div class="info-title">밀레오네 패밀리</div>
+            <div class="info-desc">도시의 깃털 거래 권력을 독점한 거대 집단. 소속원 대부분이 날개를 가진 권능 사용자. 말단이던 유저가 죽음 직전 입단 첫날로 회귀함.</div>
+          </li>
+          <li class="info-item">
+            <div class="info-title">인과율의 법칙</div>
+            <div class="info-desc">회귀 시 일반 인간들은 과거 시간선의 기억을 잃어버리지만, 높은 위계를 지닌 고위 천사들은 회귀 전의 기억을 고스란히 보존함.</div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="content-section" id="sec-feather">
+        <ul class="info-list">
+          <li class="info-item">
+            <div class="info-title">🔥 세라핌 <span style="color:#ff5252; font-size:0.72rem;">[순수한 영혼·수명]</span></div>
+            <div class="info-desc">절대적인 파괴와 타인을 무조건 복종시키는 지배력.</div>
+          </li>
+          <li class="info-item">
+            <div class="info-title">⚙️ 오파님 <span style="color:#ff5252; font-size:0.72rem;">[육체 고통·사지 제물]</span></div>
+            <div class="info-desc">강철의 규율을 강제하며 물리적으로 대상을 묶어두는 속박.</div>
+          </li>
+          <li class="info-item">
+            <div class="info-title">🩸 포테스타테스 <span style="color:#ff5252; font-size:0.72rem;">[살육·신선한 혈액]</span></div>
+            <div class="info-desc">한계를 아득히 넘어서는 신체 초월과 처참한 도살의 힘.</div>
+          </li>
+          <li class="info-item">
+            <div class="info-title">🌫️ 프린시파티스 <span style="color:#ff5252; font-size:0.72rem;">[이성·비밀·타락의 쾌락]</span></div>
+            <div class="info-desc">현실과 인지 구조를 기만하는 인지 조작 및 절대적 은폐.</div>
+          </li>
+          <li class="info-item">
+            <div class="info-title">❄️ 버추즈 <span style="color:#ff5252; font-size:0.72rem;">[맹목적 맹세·가문 몰락]</span></div>
+            <div class="info-desc">상대를 옭아매고 소멸로 이끄는 기만적인 기적과 소모.</div>
+          </li>
+          <li class="info-item">
+            <div class="info-title">⏳ 크로노팀 <span style="color:#ff5252; font-size:0.72rem;">[기억 전체·인과 흔적]</span></div>
+            <div class="info-desc">대상의 시간 축을 뒤틀거나 모든 것을 허무로 돌리는 쇠락.</div>
+          </li>
+        </ul>
+      </div>
+
+      <div class="content-section" id="sec-targets">
+        <ul class="info-list">
+          <li class="info-item">
+            <div class="info-title">카르단 (31 / 191cm / 날개 1쌍)</div>
+            <div class="info-desc">패밀리 2인자. 오파님 계열. 흑발, 푸른 눈, 예민하고 냉정함. 천사에게 영혼을 저당 잡혔으나 오히려 그들의 약점을 쥐고 협박하는 독종. 낮고 느린 존댓말.</div>
+          </li>
+          <li class="info-item">
+            <div class="info-title">에녹 (30 / 193cm / 날개 1쌍)</div>
+            <div class="info-desc">정보 수집 거점인 술집 바텐더. 세라핌 계열. 회녹색 머리, 창백한 피부. 감정이 극도로 마모되어 극도로 무뚝뚝함. 유저를 위해 회귀를 선택할 만큼 미련이 남은 인물.</div>
+          </li>
+          <li class="info-item locked" id="target-zahar">
+            <div class="info-title">자하르 (29 / 203cm / 날개 2쌍) <span class="lock-badge">REQ: LV 2</span></div>
+            <div class="info-desc">패밀리 행동대장. 오파님&포테스타테스 계열. 깃털을 3개나 흡수한 시한부 문신남. 유쾌한 쾌남이지만 머리에 동생이 준 노란 삔을 꽂은 반전 성격.</div>
+          </li>
+          <li class="info-item locked" id="target-gabriel">
+            <div class="info-title">가브리엘 (33 / 187cm / 날개 1쌍) <span class="lock-badge">REQ: LV 2</span></div>
+            <div class="info-desc">패밀리 참모(콘실리에리). 프린시파티스 계열. 백금발, 황금색 눈, 안경. 다정함을 무기로 사용하는 뱀 같은 천재. 미소 뒤에 서슴지 않는 잔인함을 숨김.</div>
+          </li>
+          <li class="info-item locked" id="target-victor">
+            <div class="info-title">빅터 (24 / 185cm / 날개 1쌍) <span class="lock-badge">REQ: LV 3</span></div>
+            <div class="info-desc">치안대 깃털 담당 부서 팀장 및 이단심문관. 버추즈 계열. 갈색 울프컷, 날지 못하는 작은 날개. 압박으로 깃털을 주입당해 깊은 자기연민과 죄책감을 지닌 냉소주의자.</div>
+          </li>
+          <li class="info-item locked" id="target-ivan">
+            <div class="info-title">아이반 (?? / 170cm / 날개 1개) <span class="lock-badge">REQ: LV 3</span></div>
+            <div class="info-desc">크로노팀 고위 천사. 새까만 흑발, 앳된 얼굴. 인간을 벌레 취급하나 지독한 권태 속 흥미로 관찰함. 유저를 인과율의 거대한 균열로 인지. <span id="ivan-true" style="display:none; color:#ffb7b7;"><br><b>[LV 4 해금 데이터]</b> 본신 상태: 189cm, 먼지처럼 끊임없이 바스러지고 피어오르는 회백색 거대 날개, 시계 태엽 소리 동반.</span></div>
+          </li>
+        </ul>
+      </div>
+
+      <button class="action-btn" onclick="syncData()">[EXECUTE_STORY_DATA_SYNC]</button>
+      <div class="sys-log" id="log-display">[SYSTEM] 인디케이터 구동 중. 회귀 동기화 및 깃털 코어 링크 완료.</div>
+    </div>
+  </div>
+
+</div>
+
+<script>
+  let userName = '';
+  let selectedFeather = null;
+  let currentLv = 1;
+  let syncPercent = 0;
+
+  function showScreen(id) {
+    document.querySelectorAll('.ah-screen').forEach(s => s.classList.remove('active'));
+    document.getElementById(id).classList.add('active');
+  }
+
+  document.getElementById('name-input').addEventListener('keydown', e => {
+    if (e.key === 'Enter') submitName();
+  });
+
+  function submitName() {
+    const val = document.getElementById('name-input').value.trim();
+    if (!val) {
+      document.getElementById('name-input').style.borderColor = '#ff5252';
+      return;
+    }
+    userName = val;
+    showScreen('screen-feather');
+  }
+
+  function selectFeather(el) {
+    selectedFeather = {
+      id: el.dataset.id,
+      name: el.dataset.name,
+      desc: el.dataset.desc,
+      cost: el.dataset.cost
+    };
+    document.getElementById('warn-name-display').textContent = '[ ' + selectedFeather.name + ' ]  권능 동기화 완료';
+    document.getElementById('warn-desc').textContent = selectedFeather.desc;
+    document.getElementById('warn-cost').textContent = selectedFeather.cost;
+    document.getElementById('warn-overlay').classList.add('show');
+  }
+
+  function proceedToMain() {
+    document.getElementById('warn-overlay').classList.remove('show');
+    document.getElementById('main-user').textContent = userName;
+    showScreen('screen-main');
+    const abilityLabel = selectedFeather ? selectedFeather.name : '';
+    document.getElementById('log-display').textContent =
+      '[SYSTEM] ' + userName + ' 인증 완료. 각인된 권능: ' + abilityLabel + '. 회귀 동기화 및 깃털 코어 링크 완료.';
+  }
+
+  function switchTab(idx) {
+    const btns = document.querySelectorAll('.tab-btn');
+    const secs = document.querySelectorAll('.content-section');
+    btns.forEach((b, i) => {
+      b.classList.toggle('active', i === idx);
+      secs[i].classList.toggle('active', i === idx);
+    });
+  }
+
+  function syncData() {
+    syncPercent += 50;
+    if (syncPercent >= 100) {
+      syncPercent = 0;
+      currentLv++;
+      document.getElementById('lv').innerText = currentLv < 10 ? '0' + currentLv : currentLv;
+      if (currentLv === 2) {
+        document.getElementById('tier').innerText = '정식 행동대원';
+        var z = document.getElementById('target-zahar');
+        var g = document.getElementById('target-gabriel');
+        z.classList.remove('locked');
+        z.querySelector('.lock-badge').remove();
+        g.classList.remove('locked');
+        g.querySelector('.lock-badge').remove();
+        printLog('레벨 업. 위계 [정식 행동대원] 변동. 패밀리 내부 인사 데이터 싱크 완료.');
+      } else if (currentLv === 3) {
+        document.getElementById('tier').innerText = '패밀리 간부';
+        var v = document.getElementById('target-victor');
+        var iv = document.getElementById('target-ivan');
+        v.classList.remove('locked');
+        v.querySelector('.lock-badge').remove();
+        iv.classList.remove('locked');
+        iv.querySelector('.lock-badge').remove();
+        printLog('레벨 업. 위계 [패밀리 간부] 변동. 치안대 최고 기밀 및 외부 고위 관찰자 데이터 감지.');
+      } else if (currentLv >= 4) {
+        document.getElementById('tier').innerText = '밀레오네 최고 권력자';
+        var ivt = document.getElementById('ivan-true');
+        if (ivt) ivt.style.display = 'inline';
+        printLog('최고 위계 도달. 고위 천사 아이반의 [본신 데이터]가 해금되었습니다.');
+      } else {
+        printLog('데이터 동기화 완료. 현재 레벨: ' + currentLv);
+      }
+    } else {
+      printLog('스토리 인과율 데이터 동기화 중... (' + syncPercent + '%)');
+    }
+    document.getElementById('exp').innerText = syncPercent + '%';
+  }
+
+  function printLog(msg) {
+    document.getElementById('log-display').innerText = '[SYSTEM] ' + msg;
+  }
+</script>
